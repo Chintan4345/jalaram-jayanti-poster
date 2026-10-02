@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="gu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#650a40">
+<title>જલારામ જયંતિ — તમારું પોસ્ટર</title>
+<style>
+*{box-sizing:border-box} body{margin:0;background:#f2e7d6;color:#43142f;font-family:system-ui,-apple-system,"Noto Sans Gujarati","Nirmala UI",sans-serif}
+.app{max-width:600px;margin:auto;padding:10px 10px 24px}
+.header{background:linear-gradient(135deg,#5d0639,#8e1557);color:#fff;border-radius:18px;padding:13px 15px;margin-bottom:10px;box-shadow:0 8px 25px #4d073322}
+.header b{font-size:18px}.header small{display:block;margin-top:3px;opacity:.9}
+.stage{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 10px 30px #0002;position:relative}
+canvas{display:block;width:100%;height:auto;touch-action:none}
+.tip{text-align:center;font-size:12px;color:#735e69;padding:8px 4px}
+.panel{background:#fff;border-radius:18px;padding:13px;margin-top:9px;box-shadow:0 5px 20px #0001}
+button{border:0;border-radius:12px;padding:12px 10px;font-size:14px;font-weight:800}
+.photo{background:#f7e8c8;color:#61123d;width:100%;border:1px solid #e3c98e}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
+.name{display:flex;gap:8px;margin-top:9px}
+.name input{flex:1;min-width:0;border:1px solid #d9cbd2;border-radius:11px;padding:12px;font-size:16px;outline:none}
+.name button{background:#f0e3ea;color:#68113f}
+.range{display:grid;grid-template-columns:58px 1fr 45px;gap:7px;align-items:center;margin-top:9px;font-size:13px;font-weight:700}
+input[type=range]{width:100%;accent-color:#7b0b47}
+.secondary{background:#f1e4ea;color:#68113f}
+.download{grid-column:1/-1;background:linear-gradient(135deg,#9c174d,#5b0738);color:#fff;font-size:16px}
+.share{background:#eee5ef;color:#5f1640}
+input[type=file]{display:none}
+.help{font-size:11px;color:#7b6a72;line-height:1.45;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="app">
+ <div class="header"><b>🙏 જલારામ જયંતિ મહોત્સવ</b><small>ફોટો + નામ ઉમેરો અને તમારું પોસ્ટર બનાવો</small></div>
+ <div class="stage"><canvas id="c"></canvas></div>
+ <div class="tip">📷 ફોટો પસંદ કરો → વર્તુળમાં આંગળીથી Drag કરો → બે આંગળીથી Zoom કરો</div>
+
+ <div class="panel">
+  <input id="file" type="file" accept="image/*">
+  <button class="photo" id="pick">📷 ફોટો પસંદ કરો / બદલો</button>
+
+  <div class="name">
+   <input id="name" maxlength="28" placeholder="તમારું નામ લખો">
+   <button id="clearName">✕</button>
+  </div>
+
+  <div class="range">
+   <span>Zoom</span><input id="zoom" type="range" min=".5" max="3.5" step=".01" value="1"><span id="zv">1.0×</span>
+  </div>
+
+  <div class="grid">
+   <button class="secondary" id="reset">↺ Reset</button>
+   <button class="secondary" id="rotate">⟳ Rotate</button>
+   <button class="share" id="share">↗️ Share</button>
+   <button class="secondary" id="clearPhoto">🗑️ ફોટો કાઢો</button>
+   <button class="download" id="download">⬇️ પોસ્ટર Download કરો</button>
+  </div>
+  <div class="help">તમારો ફોટો કોઈ server પર upload થતો નથી. ફોટો અને નામ તમારા browserમાં જ process થાય છે. Download કર્યા પછી WhatsApp પર share કરી શકો છો.</div>
+ </div>
+</div>
+
+<script>
+const W=1165,H=1536;
+const PHOTO={x:742,y:1091,r:162};
+const NAME={x:744,y:1254,w:335,h:70};
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+c.width=W;c.height=H;
+const bg=new Image();bg.src='poster.jpg';
+let im=null, state={x:PHOTO.x,y:PHOTO.y,scale:1,rot:0};
+const file=document.getElementById('file'), name=document.getElementById('name'), zoom=document.getElementById('zoom'), zv=document.getElementById('zv');
+
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ if(bg.complete)ctx.drawImage(bg,0,0,W,H);
+ if(im){
+  ctx.save();ctx.beginPath();ctx.arc(PHOTO.x,PHOTO.y,PHOTO.r,0,Math.PI*2);ctx.clip();
+  const base=Math.max(PHOTO.r*2/im.width,PHOTO.r*2/im.height),s=base*state.scale;
+  ctx.translate(state.x,state.y);ctx.rotate(state.rot*Math.PI/180);
+  ctx.drawImage(im,-im.width*s/2,-im.height*s/2,im.width*s,im.height*s);ctx.restore();
+ }
+ const n=name.value.trim();
+ if(n){
+  ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';
+  let fs=35,max=NAME.w-28;
+  while(fs>17){ctx.font=`800 ${fs}px "Noto Sans Gujarati","Nirmala UI",sans-serif`;if(ctx.measureText(n).width<=max)break;fs--}
+  ctx.lineWidth=6;ctx.strokeStyle='#fff';ctx.strokeText(n,NAME.x,NAME.y,max);
+  ctx.fillStyle='#790b47';ctx.fillText(n,NAME.x,NAME.y,max);ctx.restore();
+ }
+}
+function reset(){state={x:PHOTO.x,y:PHOTO.y,scale:1,rot:0};zoom.value=1;zv.textContent='1.0×';draw()}
+function load(f){if(!f)return;let r=new FileReader();r.onload=e=>{let x=new Image();x.onload=()=>{im=x;reset()};x.src=e.target.result};r.readAsDataURL(f)}
+document.getElementById('pick').onclick=()=>file.click();
+file.onchange=()=>load(file.files[0]);
+name.oninput=draw;
+document.getElementById('clearName').onclick=()=>{name.value='';draw()};
+zoom.oninput=()=>{state.scale=+zoom.value;zv.textContent=state.scale.toFixed(1)+'×';draw()};
+document.getElementById('reset').onclick=reset;
+document.getElementById('rotate').onclick=()=>{state.rot=(state.rot+90)%360;draw()};
+document.getElementById('clearPhoto').onclick=()=>{im=null;file.value='';reset()};
+
+function pos(e){let r=c.getBoundingClientRect();return{x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height}}
+let down=false,last=null;
+c.addEventListener('pointerdown',e=>{if(!im)return;down=true;last=pos(e);c.setPointerCapture(e.pointerId)});
+c.addEventListener('pointermove',e=>{if(!down||!im)return;let p=pos(e);state.x+=p.x-last.x;state.y+=p.y-last.y;last=p;draw()});
+c.addEventListener('pointerup',()=>{down=false;last=null});
+c.addEventListener('pointercancel',()=>{down=false;last=null});
+
+let ts=new Map(),pinch=0,pinchScale=1;
+function dist(a,b){return Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)}
+c.addEventListener('touchstart',e=>{if(!im)return;for(let t of e.changedTouches)ts.set(t.identifier,t);if(ts.size===2){let a=[...ts.values()];pinch=dist(a[0],a[1]);pinchScale=state.scale}e.preventDefault()},{passive:false});
+c.addEventListener('touchmove',e=>{for(let t of e.changedTouches)ts.set(t.identifier,t);if(ts.size===2){let a=[...ts.values()];state.scale=Math.max(.5,Math.min(3.5,pinchScale*dist(a[0],a[1])/pinch));zoom.value=state.scale;zv.textContent=state.scale.toFixed(1)+'×';draw();e.preventDefault()}},{passive:false});
+c.addEventListener('touchend',e=>{for(let t of e.changedTouches)ts.delete(t.identifier)});
+
+function blob(){return new Promise(r=>c.toBlob(r,'image/png',1))}
+document.getElementById('download').onclick=async()=>{let b=await blob(),a=document.createElement('a');let safe=(name.value.trim()||'Jalaram_Jayanti').replace(/[^\p{L}\p{N}_-]+/gu,'_');a.download=safe+'_poster.png';a.href=URL.createObjectURL(b);a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+document.getElementById('share').onclick=async()=>{let b=await blob();let f=new File([b],'Jalaram_Jayanti_Poster.png',{type:'image/png'});if(navigator.share&&navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({title:'જલારામ જયંતિ',text:'મારું જલારામ જયંતિ પોસ્ટર',files:[f]})}catch(e){}}else{alert('આ browserમાં direct Share ઉપલબ્ધ નથી. Download કરો અને WhatsAppમાંથી share કરો.')}};
+
+bg.onload=draw;draw();
+</script>
+</body>
+</html>
